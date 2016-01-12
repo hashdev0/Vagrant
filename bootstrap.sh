@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 
-apt-get update
-apt-get install -y apache2 libapache2-mod-fastcgi apache2-mpm-worker
+#apt-get update
+#apt-get install -y apache2 libapache2-mod-fastcgi apache2-mpm-worker
+apt-get install -y apache2 
 
 if ! [ -L /var/www ]; then
     rm -rf /var/www
@@ -29,7 +30,23 @@ VHOST=$(cat <<EOF
 EOF
 )
 
+VHOST2=$(cat <<EOF
+<VirtualHost *:80>
+        DocumentRoot "/vagrant/projects"
+        ServerName Vagrant-Projects 
+
+        <directory "/vagrant/projects">
+                Options Indexes FollowSymLinks
+                AllowOverride All
+                Order allow,deny
+                Allow from all
+                Require all granted
+        </directory>
+</VirtualHost>
+EOF
+)
 echo "${VHOST}" > /etc/apache2/sites-enabled/vagrant-hosts.conf
+echo "${VHOST2}" > /etc/apache2/sites-enabled/vagrant-projects.conf
 
 
 sudo debconf-set-selections <<< 'mysql-server-5.5 mysql-server/root_password password rootpass'

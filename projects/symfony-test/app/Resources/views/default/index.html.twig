@@ -1,6 +1,12 @@
 {% extends 'base.html.twig' %}
 
 {% block body %}
+{% for flash_message in app.session.flashbag.get('notice') %}
+                        <div class="flash-notice">
+                            {{ flash_message }}
+                        </div>
+                    {% endfor %}
+    
     <div id="wrapper">
         <div id="container">
             <div id="welcome">
@@ -39,6 +45,9 @@
                     <a href="http://symfony.com/doc/{{ constant('Symfony\\Component\\HttpKernel\\Kernel::VERSION')[:3] }}/book/page_creation.html">
                         How to create your first page in Symfony
                     </a>
+
+
+
                 </p>
             </div>
 
