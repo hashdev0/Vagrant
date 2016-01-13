@@ -1,9 +1,22 @@
 #!/usr/bin/env bash
 
-#apt-get update
+echo -e "\n--- Updating packages list ---\n"
+#apt-get -qq update
 #apt-get install -y apache2 libapache2-mod-fastcgi apache2-mpm-worker
 apt-get install -y apache2 
 
+echo -e "\n--- Install base packages ---\n"
+apt-get -y install vim curl build-essential python-software-properties git > /dev/null 2>&1
+
+echo -e "\n--- Add some repos to update our distro ---\n"
+add-apt-repository ppa:ondrej/php5 > /dev/null 2>&1
+add-apt-repository ppa:chris-lea/node.js > /dev/null 2>&1
+
+echo -e "\n--- Updating packages list ---\n"
+#apt-get -qq update
+
+
+echo -e "\n--- Setting document root to /var/www directory ---\n"
 if ! [ -L /var/www ]; then
     rm -rf /var/www
     ln -fs /vagrant /var/www
@@ -49,20 +62,44 @@ echo "${VHOST}" > /etc/apache2/sites-enabled/vagrant-hosts.conf
 echo "${VHOST2}" > /etc/apache2/sites-enabled/vagrant-projects.conf
 
 
-sudo debconf-set-selections <<< 'mysql-server-5.5 mysql-server/root_password password rootpass'
-sudo debconf-set-selections <<< 'mysql-server-5.5 mysql-server/root_password_again password rootpass'
-sudo apt-get -y install mysql-server libapache2-mod-auth-mysql php5-mysql
+debconf-set-selections <<< 'mysql-server-5.5 mysql-server/root_password password rootpass'
+debconf-set-selections <<< 'mysql-server-5.5 mysql-server/root_password_again password rootpass'
+apt-get -y install mysql-server libapache2-mod-auth-mysql php5-mysql phpmyadmin
 
 # Installing PHP and it's dependencies
-sudo apt-get -y install php5 libapache2-mod-php5 php5-mcrypt
-sudo apt-get install php5-intl
+apt-get -y install php5 libapache2-mod-php5 php5-mcrypt php5-curl php5-gd 
+apt-get install php5-intl
+
+#Enable Modules
+a2enmod rewrite > /dev/null 2>&1
 
 
-
+echo -e "\n--- We definitly need to see the PHP errors, turning them on ---\n"
+sed -i "s/error_reporting = .*/error_reporting = E_ALL/" /etc/php5/apache2/php.ini
+sed -i "s/display_errors = .*/display_errors = On/" /etc/php5/apache2/php.ini
 
 #Installing Symfony
-sudo curl -LsS https://symfony.com/installer -o /usr/local/bin/symfony
-sudo chmod a+x /usr/local/bin/symfony
+curl -LsS https://symfony.com/installer -o /usr/local/bin/symfony
+chmod a+x /usr/local/bin/symfony
 
 #Install Composor
-sudo curl -sS https://getcomposer.org/installer | php
+echo -e "\n--- Installing Composer for PHP package management ---\n"
+curl --silent https://getcomposer.org/installer | php > /dev/null 2>&1
+mv composer.phar /usr/local/bin/composer
+
+echo -e "\n--- Installing NodeJS and NPM ---\n"
+apt-get -y install nodejs > /dev/null 2>&1
+curl --silent https://npmjs.org/install.sh | sh > /dev/null 2>&1
+
+echo -e "\n--- Installing javascript components ---\n"
+npm install -g gulp bower > /dev/null 2>&1
+
+
+echo -e "\n--- Updating project components and pulling latest versions ---\n"
+cd /vagrant
+sudo -u vagrant -H sh -c "composer install" > /dev/null 2>&1
+cd /vagrant/client
+sudo -u vagrant -H sh -c "npm install" > /dev/null 2>&1
+sudo -u vagrant -H sh -c "bower install -s" > /dev/null 2>&1
+sudo -u vagrant -H sh -c "gulp" > /dev/null 2>&1
+
